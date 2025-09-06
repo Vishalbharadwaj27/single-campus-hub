@@ -14,7 +14,19 @@ import {
   Award,
   CheckCircle2,
   Eye,
-  UserCheck
+  UserCheck,
+  Search,
+  Edit,
+  Trash2,
+  AlertCircle,
+  Settings,
+  BookOpen,
+  UserPlus,
+  Heart,
+  Home,
+  LogOut,
+  Menu,
+  ArrowLeft
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,11 +34,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
 // Types based on PostgreSQL schema
 type UserRole = 'student' | 'admin';
 type EventCategory = 'Workshop' | 'Fest' | 'Seminar' | 'Tech Talk' | 'Hackathon';
+type AppMode = 'admin' | 'student';
 
 interface User {
   user_id: number;
@@ -67,8 +82,13 @@ interface TopStudent {
   rank: number;
 }
 
+interface EventWithRegistration extends Event {
+  is_registered: boolean;
+  registration_id?: number;
+}
+
 // Mock Data
-const mockUsers: User[] = [
+const initialUsers: User[] = [
   { user_id: 1, full_name: 'Dr. Sarah Mitchell', email: 'sarah.mitchell@college.edu', role: 'admin', created_at: '2024-01-01T00:00:00Z' },
   { user_id: 2, full_name: 'Prof. James Wilson', email: 'james.wilson@college.edu', role: 'admin', created_at: '2024-01-01T00:00:00Z' },
   { user_id: 3, full_name: 'Alex Chen', email: 'alex.chen@student.edu', role: 'student', created_at: '2024-01-15T00:00:00Z' },
@@ -83,25 +103,25 @@ const mockUsers: User[] = [
   { user_id: 12, full_name: 'Zoe Davis', email: 'zoe.davis@student.edu', role: 'student', created_at: '2024-01-24T00:00:00Z' }
 ];
 
-const mockEvents: Event[] = [
-  { event_id: 1, title: 'AI Workshop: Introduction to Machine Learning', description: 'Learn the fundamentals of machine learning and AI applications.', event_date: '2024-02-15T14:00:00Z', location: 'Computer Science Building, Room 101', category: 'Workshop', created_by: 1, created_at: '2024-01-25T00:00:00Z' },
-  { event_id: 2, title: 'Spring Tech Fest 2024', description: 'Annual technology festival featuring student projects and industry speakers.', event_date: '2024-03-20T09:00:00Z', location: 'Main Campus Auditorium', category: 'Fest', created_by: 1, created_at: '2024-01-26T00:00:00Z' },
-  { event_id: 3, title: 'Cybersecurity in Modern World', description: 'Seminar on current cybersecurity threats and protection strategies.', event_date: '2024-02-28T16:00:00Z', location: 'Engineering Building, Hall A', category: 'Seminar', created_by: 2, created_at: '2024-01-27T00:00:00Z' },
-  { event_id: 4, title: 'Google Tech Talk: Cloud Computing', description: 'Industry experts from Google discuss cloud technologies and career opportunities.', event_date: '2024-03-05T15:30:00Z', location: 'Main Campus Auditorium', category: 'Tech Talk', created_by: 1, created_at: '2024-01-28T00:00:00Z' },
-  { event_id: 5, title: 'HackCollege 2024', description: '48-hour hackathon focused on solving real-world problems.', event_date: '2024-04-12T18:00:00Z', location: 'Innovation Lab', category: 'Hackathon', created_by: 2, created_at: '2024-01-29T00:00:00Z' },
-  { event_id: 6, title: 'Web Development Bootcamp', description: 'Intensive workshop covering modern web development frameworks.', event_date: '2024-02-22T10:00:00Z', location: 'Computer Science Building, Room 205', category: 'Workshop', created_by: 1, created_at: '2024-01-30T00:00:00Z' },
-  { event_id: 7, title: 'Cultural Fest: Unity in Diversity', description: 'Celebration of campus cultural diversity with performances and food.', event_date: '2024-03-15T17:00:00Z', location: 'Central Quad', category: 'Fest', created_by: 2, created_at: '2024-01-31T00:00:00Z' },
-  { event_id: 8, title: 'Research Methodology Seminar', description: 'Learn effective research techniques for academic and professional projects.', event_date: '2024-02-18T13:00:00Z', location: 'Library Conference Room', category: 'Seminar', created_by: 1, created_at: '2024-02-01T00:00:00Z' },
-  { event_id: 9, title: 'Microsoft Tech Talk: Azure and AI', description: 'Microsoft engineers discuss Azure cloud services and AI integration.', event_date: '2024-03-08T14:00:00Z', location: 'Business Building, Lecture Hall 1', category: 'Tech Talk', created_by: 2, created_at: '2024-02-02T00:00:00Z' },
-  { event_id: 10, title: 'Mobile App Development Workshop', description: 'Build your first mobile app using React Native.', event_date: '2024-02-25T11:00:00Z', location: 'Computer Science Building, Room 301', category: 'Workshop', created_by: 1, created_at: '2024-02-03T00:00:00Z' },
-  { event_id: 11, title: 'Data Science Challenge', description: 'Competitive hackathon focused on data analysis and visualization.', event_date: '2024-04-05T09:00:00Z', location: 'Data Science Lab', category: 'Hackathon', created_by: 2, created_at: '2024-02-04T00:00:00Z' },
-  { event_id: 12, title: 'Entrepreneurship Seminar', description: 'Learn about starting your own tech company from successful founders.', event_date: '2024-03-12T16:30:00Z', location: 'Business Building, Conference Room A', category: 'Seminar', created_by: 1, created_at: '2024-02-05T00:00:00Z' },
-  { event_id: 13, title: 'Gaming Development Workshop', description: 'Create your first game using Unity and C#.', event_date: '2024-03-01T10:30:00Z', location: 'Media Arts Building, Studio 1', category: 'Workshop', created_by: 2, created_at: '2024-02-06T00:00:00Z' },
-  { event_id: 14, title: 'Alumni Tech Talk: Career Paths', description: 'Recent graduates share their career journeys in technology.', event_date: '2024-03-18T15:00:00Z', location: 'Main Campus Auditorium', category: 'Tech Talk', created_by: 1, created_at: '2024-02-07T00:00:00Z' },
-  { event_id: 15, title: 'Innovation Showcase', description: 'Student projects and research presentations with industry judges.', event_date: '2024-04-20T13:00:00Z', location: 'Innovation Center', category: 'Fest', created_by: 2, created_at: '2024-02-08T00:00:00Z' }
+const initialEvents: Event[] = [
+  { event_id: 1, title: 'AI Workshop: Introduction to Machine Learning', description: 'Learn the fundamentals of machine learning and AI applications in this comprehensive workshop. Suitable for beginners and intermediate learners.', event_date: '2024-02-15T14:00:00Z', location: 'Computer Science Building, Room 101', category: 'Workshop', created_by: 1, created_at: '2024-01-25T00:00:00Z' },
+  { event_id: 2, title: 'Spring Tech Fest 2024', description: 'Annual technology festival featuring student projects, industry speakers, and networking opportunities. Join us for an exciting day of innovation and learning.', event_date: '2024-03-20T09:00:00Z', location: 'Main Campus Auditorium', category: 'Fest', created_by: 1, created_at: '2024-01-26T00:00:00Z' },
+  { event_id: 3, title: 'Cybersecurity in Modern World', description: 'Seminar on current cybersecurity threats and protection strategies. Learn from industry experts about the latest security trends.', event_date: '2024-02-28T16:00:00Z', location: 'Engineering Building, Hall A', category: 'Seminar', created_by: 2, created_at: '2024-01-27T00:00:00Z' },
+  { event_id: 4, title: 'Google Tech Talk: Cloud Computing', description: 'Industry experts from Google discuss cloud technologies and career opportunities. Get insights into modern cloud infrastructure and development practices.', event_date: '2024-03-05T15:30:00Z', location: 'Main Campus Auditorium', category: 'Tech Talk', created_by: 1, created_at: '2024-01-28T00:00:00Z' },
+  { event_id: 5, title: 'HackCollege 2024', description: '48-hour hackathon focused on solving real-world problems. Form teams, build innovative solutions, and compete for amazing prizes.', event_date: '2024-04-12T18:00:00Z', location: 'Innovation Lab', category: 'Hackathon', created_by: 2, created_at: '2024-01-29T00:00:00Z' },
+  { event_id: 6, title: 'Web Development Bootcamp', description: 'Intensive workshop covering modern web development frameworks including React, Node.js, and database integration.', event_date: '2024-02-22T10:00:00Z', location: 'Computer Science Building, Room 205', category: 'Workshop', created_by: 1, created_at: '2024-01-30T00:00:00Z' },
+  { event_id: 7, title: 'Cultural Fest: Unity in Diversity', description: 'Celebration of campus cultural diversity with performances, food, and cultural exchanges from around the world.', event_date: '2024-03-15T17:00:00Z', location: 'Central Quad', category: 'Fest', created_by: 2, created_at: '2024-01-31T00:00:00Z' },
+  { event_id: 8, title: 'Research Methodology Seminar', description: 'Learn effective research techniques for academic and professional projects. Essential skills for graduate studies and research careers.', event_date: '2024-02-18T13:00:00Z', location: 'Library Conference Room', category: 'Seminar', created_by: 1, created_at: '2024-02-01T00:00:00Z' },
+  { event_id: 9, title: 'Microsoft Tech Talk: Azure and AI', description: 'Microsoft engineers discuss Azure cloud services and AI integration. Explore the future of cloud computing and artificial intelligence.', event_date: '2024-03-08T14:00:00Z', location: 'Business Building, Lecture Hall 1', category: 'Tech Talk', created_by: 2, created_at: '2024-02-02T00:00:00Z' },
+  { event_id: 10, title: 'Mobile App Development Workshop', description: 'Build your first mobile app using React Native. Learn cross-platform development and deploy to both iOS and Android.', event_date: '2024-02-25T11:00:00Z', location: 'Computer Science Building, Room 301', category: 'Workshop', created_by: 1, created_at: '2024-02-03T00:00:00Z' },
+  { event_id: 11, title: 'Data Science Challenge', description: 'Competitive hackathon focused on data analysis and visualization. Work with real datasets and compete for prizes.', event_date: '2024-04-05T09:00:00Z', location: 'Data Science Lab', category: 'Hackathon', created_by: 2, created_at: '2024-02-04T00:00:00Z' },
+  { event_id: 12, title: 'Entrepreneurship Seminar', description: 'Learn about starting your own tech company from successful founders. Get practical advice on building and scaling startups.', event_date: '2024-03-12T16:30:00Z', location: 'Business Building, Conference Room A', category: 'Seminar', created_by: 1, created_at: '2024-02-05T00:00:00Z' },
+  { event_id: 13, title: 'Gaming Development Workshop', description: 'Create your first game using Unity and C#. Learn game design principles and development best practices.', event_date: '2024-03-01T10:30:00Z', location: 'Media Arts Building, Studio 1', category: 'Workshop', created_by: 2, created_at: '2024-02-06T00:00:00Z' },
+  { event_id: 14, title: 'Alumni Tech Talk: Career Paths', description: 'Recent graduates share their career journeys in technology. Get insights into different career paths and industry trends.', event_date: '2024-03-18T15:00:00Z', location: 'Main Campus Auditorium', category: 'Tech Talk', created_by: 1, created_at: '2024-02-07T00:00:00Z' },
+  { event_id: 15, title: 'Innovation Showcase', description: 'Student projects and research presentations with industry judges. Showcase your innovative ideas and get feedback from experts.', event_date: '2024-04-20T13:00:00Z', location: 'Innovation Center', category: 'Fest', created_by: 2, created_at: '2024-02-08T00:00:00Z' }
 ];
 
-const mockRegistrations: Registration[] = [
+const initialRegistrations: Registration[] = [
   // Alex Chen - Most active student (7 checkins)
   { registration_id: 1, student_id: 3, event_id: 1, registration_date: '2024-02-10T00:00:00Z', checked_in: true },
   { registration_id: 2, student_id: 3, event_id: 3, registration_date: '2024-02-20T00:00:00Z', checked_in: true },
@@ -157,837 +177,1692 @@ const mockRegistrations: Registration[] = [
   { registration_id: 40, student_id: 12, event_id: 7, registration_date: '2024-03-04T00:00:00Z', checked_in: true }
 ];
 
-// Mock API Functions
-const mockAPI = {
-  async fetchEvents(): Promise<Event[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return mockEvents;
-  },
+// ============= CAMPUS EVENT PLATFORM MAIN COMPONENT =============
+const CampusEventPlatform: React.FC = () => {
+  // Global State Management
+  const [users] = useState<User[]>(initialUsers);
+  const [events, setEvents] = useState<Event[]>(initialEvents);
+  const [registrations, setRegistrations] = useState<Registration[]>(initialRegistrations);
   
-  async fetchEventWithStats(): Promise<EventWithStats[]> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    return mockEvents.map(event => {
-      const registrations = mockRegistrations.filter(r => r.event_id === event.event_id);
-      const checkedIn = registrations.filter(r => r.checked_in).length;
-      return {
-        ...event,
-        total_registrations: registrations.length,
-        checkin_rate: registrations.length > 0 ? Math.round((checkedIn / registrations.length) * 100) : 0
-      };
-    });
-  },
+  // App State
+  const [appMode, setAppMode] = useState<AppMode>('admin');
+  const [currentUserId] = useState<number>(appMode === 'admin' ? 1 : 3);
+  const [page, setPage] = useState<string>('dashboard');
   
-  async fetchTopStudents(): Promise<TopStudent[]> {
-    await new Promise(resolve => setTimeout(resolve, 500));
+  // UI State
+  const [loading, setLoading] = useState<boolean>(false);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [showEventModal, setShowEventModal] = useState<boolean>(false);
+  
+  const { toast } = useToast();
+
+  // Mock API Functions with State Mutation
+  const mockAPI = {
+    async fetchEvents(): Promise<Event[]> {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return events;
+    },
     
-    const studentCheckins = mockRegistrations
-      .filter(r => r.checked_in)
-      .reduce((acc, reg) => {
-        acc[reg.student_id] = (acc[reg.student_id] || 0) + 1;
-        return acc;
-      }, {} as Record<number, number>);
-    
-    const topStudents = Object.entries(studentCheckins)
-      .map(([studentId, checkins]) => {
-        const student = mockUsers.find(u => u.user_id === parseInt(studentId));
+    async fetchEventWithStats(): Promise<EventWithStats[]> {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      return events.map(event => {
+        const eventRegistrations = registrations.filter(r => r.event_id === event.event_id);
+        const checkedIn = eventRegistrations.filter(r => r.checked_in).length;
         return {
-          user_id: parseInt(studentId),
-          full_name: student?.full_name || 'Unknown',
-          total_checkins: checkins,
-          rank: 0
-        };
-      })
-      .sort((a, b) => b.total_checkins - a.total_checkins)
-      .slice(0, 3)
-      .map((student, index) => ({ ...student, rank: index + 1 }));
-    
-    return topStudents;
-  },
-  
-  async fetchRecentRegistrations(): Promise<Array<{ student_name: string; event_title: string; registration_date: string }>> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    const recent = mockRegistrations
-      .sort((a, b) => new Date(b.registration_date).getTime() - new Date(a.registration_date).getTime())
-      .slice(0, 5)
-      .map(reg => {
-        const student = mockUsers.find(u => u.user_id === reg.student_id);
-        const event = mockEvents.find(e => e.event_id === reg.event_id);
-        return {
-          student_name: student?.full_name || 'Unknown',
-          event_title: event?.title || 'Unknown Event',
-          registration_date: reg.registration_date
+          ...event,
+          total_registrations: eventRegistrations.length,
+          checkin_rate: eventRegistrations.length > 0 ? Math.round((checkedIn / eventRegistrations.length) * 100) : 0
         };
       });
+    },
     
-    return recent;
-  },
-  
-  async createEvent(eventData: Omit<Event, 'event_id' | 'created_at'>): Promise<Event> {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const newEvent: Event = {
-      ...eventData,
-      event_id: Math.max(...mockEvents.map(e => e.event_id)) + 1,
-      created_at: new Date().toISOString()
-    };
-    
-    mockEvents.push(newEvent);
-    return newEvent;
-  }
-};
-
-// Component: Navigation Sidebar
-const Sidebar: React.FC<{ currentPage: string; onPageChange: (page: string) => void }> = ({ currentPage, onPageChange }) => {
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'events', label: 'Events', icon: Calendar },
-    { id: 'reports', label: 'Reports', icon: TrendingUp }
-  ];
-
-  return (
-    <div className="w-64 bg-card border-r border-border flex flex-col">
-      <div className="p-6 border-b border-border">
-        <h1 className="text-xl font-bold text-primary">Campus Events</h1>
-        <p className="text-sm text-muted-foreground">Admin Portal</p>
-      </div>
+    async fetchTopStudents(): Promise<TopStudent[]> {
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPage === item.id;
-            
-            return (
-              <li key={item.id}>
-                <button
-                  onClick={() => onPageChange(item.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-smooth ${
-                    isActive 
-                      ? 'bg-primary text-primary-foreground glow-effect' 
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-                >
-                  <Icon size={20} />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-    </div>
-  );
-};
-
-// Component: Admin Dashboard
-const AdminDashboard: React.FC<{ onPageChange: (page: string) => void }> = ({ onPageChange }) => {
-  const [stats, setStats] = useState({ totalEvents: 0, totalRegistrations: 0, upcomingEvents: 0 });
-  const [recentActivity, setRecentActivity] = useState<Array<{ student_name: string; event_title: string; registration_date: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        const [events, registrations, recent] = await Promise.all([
-          mockAPI.fetchEvents(),
-          Promise.resolve(mockRegistrations),
-          mockAPI.fetchRecentRegistrations()
-        ]);
-        
-        const upcoming = events.filter(e => new Date(e.event_date) > new Date()).length;
-        
-        setStats({
-          totalEvents: events.length,
-          totalRegistrations: registrations.length,
-          upcomingEvents: upcoming
+      const studentCheckins = registrations
+        .filter(r => r.checked_in)
+        .reduce((acc, reg) => {
+          acc[reg.student_id] = (acc[reg.student_id] || 0) + 1;
+          return acc;
+        }, {} as Record<number, number>);
+      
+      const topStudents = Object.entries(studentCheckins)
+        .map(([studentId, checkins]) => {
+          const student = users.find(u => u.user_id === parseInt(studentId));
+          return {
+            user_id: parseInt(studentId),
+            full_name: student?.full_name || 'Unknown',
+            total_checkins: checkins,
+            rank: 0
+          };
+        })
+        .sort((a, b) => b.total_checkins - a.total_checkins)
+        .slice(0, 3)
+        .map((student, index) => ({ ...student, rank: index + 1 }));
+      
+      return topStudents;
+    },
+    
+    async fetchRecentRegistrations(): Promise<Array<{ student_name: string; event_title: string; registration_date: string }>> {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      const recent = registrations
+        .sort((a, b) => new Date(b.registration_date).getTime() - new Date(a.registration_date).getTime())
+        .slice(0, 5)
+        .map(reg => {
+          const student = users.find(u => u.user_id === reg.student_id);
+          const event = events.find(e => e.event_id === reg.event_id);
+          return {
+            student_name: student?.full_name || 'Unknown',
+            event_title: event?.title || 'Unknown Event',
+            registration_date: reg.registration_date
+          };
         });
-        
-        setRecentActivity(recent);
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboardData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Manage your campus events efficiently</p>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="gradient-card elevated-card transition-smooth hover:scale-105">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Events</CardTitle>
-            <Calendar className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{stats.totalEvents}</div>
-            <p className="text-xs text-muted-foreground">Active events on platform</p>
-          </CardContent>
-        </Card>
-
-        <Card className="gradient-card elevated-card transition-smooth hover:scale-105">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Registrations</CardTitle>
-            <Users className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{stats.totalRegistrations}</div>
-            <p className="text-xs text-muted-foreground">Student registrations</p>
-          </CardContent>
-        </Card>
-
-        <Card className="gradient-card elevated-card transition-smooth hover:scale-105">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-            <Clock className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{stats.upcomingEvents}</div>
-            <p className="text-xs text-muted-foreground">Events this month</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="gradient-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Plus className="h-5 w-5 text-primary" />
-              <span>Quick Actions</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              onClick={() => onPageChange('create-event')}
-              className="w-full gradient-primary glow-effect transition-bounce hover:scale-105"
-              size="lg"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create New Event
-            </Button>
-            
-            <Button
-              onClick={() => onPageChange('reports')}
-              variant="secondary"
-              className="w-full transition-smooth hover:bg-primary hover:text-primary-foreground"
-              size="lg"
-            >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              View Reports
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="gradient-card">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50">
-                  <UserCheck className="h-4 w-4 text-primary flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{activity.student_name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{activity.event_title}</p>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(activity.registration_date).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Student Preview Section */}
-      <Card className="gradient-card">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Eye className="h-5 w-5 text-primary" />
-            <span>Student Experience Preview</span>
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">How events appear to students</p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <StudentEventCard />
-            <div className="flex items-center justify-center">
-              <Button 
-                variant="outline" 
-                className="transition-smooth hover:bg-primary hover:text-primary-foreground"
-                onClick={() => {/* This would open the modal in a real app */}}
-              >
-                Preview Registration Modal
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-// Component: Reporting Page
-const ReportingPage: React.FC = () => {
-  const [topStudents, setTopStudents] = useState<TopStudent[]>([]);
-  const [eventsWithStats, setEventsWithStats] = useState<EventWithStats[]>([]);
-  const [filteredEvents, setFilteredEvents] = useState<EventWithStats[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadReportsData = async () => {
-      try {
-        const [students, events] = await Promise.all([
-          mockAPI.fetchTopStudents(),
-          mockAPI.fetchEventWithStats()
-        ]);
-        
-        setTopStudents(students);
-        setEventsWithStats(events);
-        setFilteredEvents(events);
-      } catch (error) {
-        console.error('Error loading reports data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadReportsData();
-  }, []);
-
-  useEffect(() => {
-    if (selectedCategory === 'all') {
-      setFilteredEvents(eventsWithStats);
-    } else {
-      setFilteredEvents(eventsWithStats.filter(event => event.category === selectedCategory));
+      
+      return recent;
+    },
+    
+    async createEvent(eventData: Omit<Event, 'event_id' | 'created_at'>): Promise<Event> {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const newEvent: Event = {
+        ...eventData,
+        event_id: Math.max(...events.map(e => e.event_id)) + 1,
+        created_at: new Date().toISOString()
+      };
+      
+      setEvents(prev => [...prev, newEvent]);
+      return newEvent;
+    },
+    
+    async updateEvent(eventId: number, eventData: Partial<Event>): Promise<Event> {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      const updatedEvent = { ...events.find(e => e.event_id === eventId)!, ...eventData };
+      setEvents(prev => prev.map(e => e.event_id === eventId ? updatedEvent : e));
+      return updatedEvent;
+    },
+    
+    async deleteEvent(eventId: number): Promise<void> {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      setEvents(prev => prev.filter(e => e.event_id !== eventId));
+      setRegistrations(prev => prev.filter(r => r.event_id !== eventId));
+    },
+    
+    async registerForEvent(studentId: number, eventId: number): Promise<Registration> {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const newRegistration: Registration = {
+        registration_id: Math.max(...registrations.map(r => r.registration_id)) + 1,
+        student_id: studentId,
+        event_id: eventId,
+        registration_date: new Date().toISOString(),
+        checked_in: false
+      };
+      
+      setRegistrations(prev => [...prev, newRegistration]);
+      return newRegistration;
+    },
+    
+    async unregisterFromEvent(studentId: number, eventId: number): Promise<void> {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      setRegistrations(prev => prev.filter(r => !(r.student_id === studentId && r.event_id === eventId)));
+    },
+    
+    async checkInStudent(registrationId: number): Promise<void> {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      setRegistrations(prev => prev.map(r => 
+        r.registration_id === registrationId ? { ...r, checked_in: true } : r
+      ));
+    },
+    
+    async fetchEventRegistrations(eventId: number): Promise<Array<{registration: Registration; student: User}>> {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const eventRegistrations = registrations.filter(r => r.event_id === eventId);
+      return eventRegistrations.map(reg => ({
+        registration: reg,
+        student: users.find(u => u.user_id === reg.student_id)!
+      }));
+    },
+    
+    async fetchStudentEvents(studentId: number): Promise<EventWithRegistration[]> {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      return events.map(event => {
+        const registration = registrations.find(r => r.student_id === studentId && r.event_id === event.event_id);
+        return {
+          ...event,
+          is_registered: !!registration,
+          registration_id: registration?.registration_id
+        };
+      });
     }
-  }, [selectedCategory, eventsWithStats]);
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Helper Functions
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
-  const getTrophyIcon = (rank: number) => {
+  const getCategoryColor = (category: EventCategory): string => {
+    const colors = {
+      'Workshop': 'bg-blue-600',
+      'Fest': 'bg-purple-600',
+      'Seminar': 'bg-green-600',
+      'Tech Talk': 'bg-orange-600',
+      'Hackathon': 'bg-red-600'
+    };
+    return colors[category];
+  };
+
+  const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1: return <Trophy className="h-8 w-8 text-yellow-500" />;
       case 2: return <Award className="h-8 w-8 text-gray-400" />;
-      case 3: return <Star className="h-8 w-8 text-amber-600" />;
-      default: return <Trophy className="h-8 w-8 text-primary" />;
+      case 3: return <Star className="h-8 w-8 text-orange-600" />;
+      default: return null;
     }
   };
 
-  const getRankColors = (rank: number) => {
-    switch (rank) {
-      case 1: return 'border-yellow-500/30 bg-yellow-500/10';
-      case 2: return 'border-gray-400/30 bg-gray-400/10';
-      case 3: return 'border-amber-600/30 bg-amber-600/10';
-      default: return 'border-primary/30 bg-primary/10';
-    }
-  };
+  const Skeleton: React.FC<{ className?: string }> = ({ className = "" }) => (
+    <div className={`animate-pulse bg-muted rounded ${className}`}></div>
+  );
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Event & Student Reports</h1>
-        <p className="text-muted-foreground mt-2">Analytics and insights for campus events</p>
-      </div>
+  const EmptyState: React.FC<{ icon: React.ComponentType<any>; title: string; description: string }> = ({ icon: Icon, title, description }) => (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Icon className="h-12 w-12 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
+      <p className="text-muted-foreground max-w-md">{description}</p>
+    </div>
+  );
 
-      {/* Top 3 Most Active Students */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-6 flex items-center space-x-2">
-          <Trophy className="h-6 w-6 text-primary" />
-          <span>Top 3 Most Active Students</span>
-        </h2>
+  // ============= NAVIGATION COMPONENTS =============
+  const AdminSidebar: React.FC = () => {
+    const navItems = [
+      { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+      { id: 'events-list', label: 'Events', icon: Calendar },
+      { id: 'reports', label: 'Reports', icon: TrendingUp }
+    ];
+
+    return (
+      <div className="w-64 bg-card border-r border-border flex flex-col h-screen">
+        <div className="p-6 border-b border-border">
+          <h1 className="text-xl font-bold text-primary">Campus Events</h1>
+          <p className="text-sm text-muted-foreground">Admin Portal</p>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {topStudents.map((student) => (
-            <Card key={student.user_id} className={`gradient-card elevated-card transition-bounce hover:scale-105 border-2 ${getRankColors(student.rank)}`}>
-              <CardContent className="p-6 text-center">
-                <div className="flex justify-center mb-4">
-                  {getTrophyIcon(student.rank)}
-                </div>
-                <div className="text-4xl font-bold text-primary mb-2">#{student.rank}</div>
-                <h3 className="text-xl font-semibold mb-2">{student.full_name}</h3>
-                <div className="flex items-center justify-center space-x-2 text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="text-lg font-medium">{student.total_checkins} Events Attended</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = page === item.id;
+              
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => setPage(item.id)}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-smooth ${
+                      isActive 
+                        ? 'bg-primary text-primary-foreground glow-effect' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Icon size={20} />
+                    <span className="font-medium">{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+        
+        <div className="p-4 border-t border-border">
+          <Button
+            variant="outline"
+            onClick={() => setAppMode('student')}
+            className="w-full"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Switch to Student
+          </Button>
         </div>
       </div>
-
-      {/* Event Analytics */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-6">Event Analytics</h2>
-        
-        <Card className="gradient-card">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-              <CardTitle className="flex items-center space-x-2">
-                <Filter className="h-5 w-5 text-primary" />
-                <span>Filter by Category</span>
-              </CardTitle>
-              
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="Workshop">Workshop</SelectItem>
-                  <SelectItem value="Fest">Fest</SelectItem>
-                  <SelectItem value="Seminar">Seminar</SelectItem>
-                  <SelectItem value="Tech Talk">Tech Talk</SelectItem>
-                  <SelectItem value="Hackathon">Hackathon</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-semibold">Event Title</th>
-                    <th className="text-left py-3 px-4 font-semibold">Category</th>
-                    <th className="text-left py-3 px-4 font-semibold">Date</th>
-                    <th className="text-center py-3 px-4 font-semibold">Registrations</th>
-                    <th className="text-center py-3 px-4 font-semibold">Check-in Rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredEvents.map((event) => (
-                    <tr key={event.event_id} className="border-b border-border/50 hover:bg-muted/30 transition-smooth">
-                      <td className="py-3 px-4 font-medium">{event.title}</td>
-                      <td className="py-3 px-4">
-                        <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">
-                          {event.category}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-muted-foreground">
-                        {new Date(event.event_date).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4 text-center font-semibold">{event.total_registrations}</td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={`font-semibold ${event.checkin_rate >= 70 ? 'text-green-500' : event.checkin_rate >= 40 ? 'text-yellow-500' : 'text-red-500'}`}>
-                          {event.checkin_rate}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-// Component: Event Form
-const EventForm: React.FC<{ onPageChange: (page: string) => void }> = ({ onPageChange }) => {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    event_date: '',
-    location: '',
-    category: '' as EventCategory | ''
-  });
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.title || !formData.description || !formData.event_date || !formData.location || !formData.category) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      await mockAPI.createEvent({
-        ...formData,
-        category: formData.category as EventCategory,
-        created_by: 1 // Current admin user
-      });
-      
-      toast({
-        title: "Success",
-        description: "Event created successfully!"
-      });
-      
-      setFormData({
-        title: '',
-        description: '',
-        event_date: '',
-        location: '',
-        category: ''
-      });
-      
-      setTimeout(() => {
-        onPageChange('events');
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Error creating event:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create event. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
-  return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Create New Event</h1>
-        <p className="text-muted-foreground mt-2">Add a new event to the campus calendar</p>
-      </div>
+  const StudentHeader: React.FC = () => {
+    const navItems = [
+      { id: 'event-browser', label: 'Browse Events', icon: BookOpen },
+      { id: 'my-events', label: 'My Events', icon: Heart }
+    ];
 
-      <Card className="gradient-card">
-        <CardContent className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="title" className="text-sm font-medium">Event Title</label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Enter event title"
-                className="transition-smooth focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium">Description</label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe your event"
-                rows={4}
-                className="transition-smooth focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="event_date" className="text-sm font-medium">Date & Time</label>
-                <Input
-                  id="event_date"
-                  type="datetime-local"
-                  value={formData.event_date}
-                  onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                  className="transition-smooth focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="category" className="text-sm font-medium">Category</label>
-                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value as EventCategory })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Workshop">Workshop</SelectItem>
-                    <SelectItem value="Fest">Fest</SelectItem>
-                    <SelectItem value="Seminar">Seminar</SelectItem>
-                    <SelectItem value="Tech Talk">Tech Talk</SelectItem>
-                    <SelectItem value="Hackathon">Hackathon</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="location" className="text-sm font-medium">Location</label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="Event location"
-                className="transition-smooth focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <div className="flex space-x-4 pt-4">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="flex-1 gradient-primary glow-effect transition-bounce hover:scale-105"
-                size="lg"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Event
-                  </>
-                )}
-              </Button>
+    return (
+      <header className="bg-card border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-bold text-primary">Campus Events</h1>
+            <Badge variant="secondary">Student Portal</Badge>
+          </div>
+          
+          <nav className="flex items-center space-x-4">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = page === item.id;
               
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => onPageChange('events')}
-                className="transition-smooth hover:bg-primary hover:text-primary-foreground"
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setPage(item.id)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-smooth ${
+                    isActive 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+            
+            <Button
+              variant="outline"
+              onClick={() => setAppMode('admin')}
+              size="sm"
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Switch to Admin
+            </Button>
+          </nav>
+        </div>
+      </header>
+    );
+  };
+
+  // ============= ADMIN COMPONENTS =============
+  const AdminDashboard: React.FC = () => {
+    const [stats, setStats] = useState({ totalEvents: 0, totalRegistrations: 0, upcomingEvents: 0 });
+    const [recentActivity, setRecentActivity] = useState<Array<{ student_name: string; event_title: string; registration_date: string }>>([]);
+    const [dashboardLoading, setDashboardLoading] = useState(true);
+
+    useEffect(() => {
+      const loadDashboardData = async () => {
+        setDashboardLoading(true);
+        try {
+          const [fetchedEvents, recent] = await Promise.all([
+            mockAPI.fetchEvents(),
+            mockAPI.fetchRecentRegistrations()
+          ]);
+          
+          const upcoming = fetchedEvents.filter(e => new Date(e.event_date) > new Date()).length;
+          
+          setStats({
+            totalEvents: fetchedEvents.length,
+            totalRegistrations: registrations.length,
+            upcomingEvents: upcoming
+          });
+          
+          setRecentActivity(recent);
+        } catch (error) {
+          console.error('Error loading dashboard data:', error);
+        } finally {
+          setDashboardLoading(false);
+        }
+      };
+
+      loadDashboardData();
+    }, [registrations.length]);
+
+    if (dashboardLoading) {
+      return (
+        <div className="space-y-8 p-8">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <Card key={i} className="gradient-card">
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-8 p-8">
+        <div>
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-muted-foreground mt-2">Manage your campus events efficiently</p>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="gradient-card glow-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalEvents}</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="gradient-card glow-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Registrations</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalRegistrations}</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="gradient-card glow-effect">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.upcomingEvents}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="gradient-card">
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={() => setPage('create-event')} 
+                className="w-full justify-start glow-effect"
                 size="lg"
               >
-                Cancel
+                <Plus className="mr-2 h-5 w-5" />
+                Create New Event
               </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+              <Button 
+                onClick={() => setPage('reports')} 
+                variant="outline" 
+                className="w-full justify-start"
+                size="lg"
+              >
+                <BarChart3 className="mr-2 h-5 w-5" />
+                View Reports
+              </Button>
+            </CardContent>
+          </Card>
 
-// Component: Events List
-const EventsList: React.FC<{ onPageChange: (page: string) => void }> = ({ onPageChange }) => {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+          {/* Recent Activity */}
+          <Card className="gradient-card">
+            <CardHeader>
+              <CardTitle>Recent Registrations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentActivity.length === 0 ? (
+                <EmptyState 
+                  icon={Users} 
+                  title="No Recent Activity" 
+                  description="No recent registrations to display."
+                />
+              ) : (
+                <div className="space-y-3">
+                  {recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-center space-x-3 p-3 rounded-lg bg-muted/30">
+                      <UserCheck className="h-4 w-4 text-primary" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{activity.student_name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{activity.event_title}</p>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(activity.registration_date).split(',')[0]}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
 
-  useEffect(() => {
-    const loadEvents = async () => {
+  const EventsList: React.FC = () => {
+    const [eventsList, setEventsList] = useState<Event[]>([]);
+    const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState<string>('all');
+    const [eventsLoading, setEventsLoading] = useState(true);
+    const [deleteEventId, setDeleteEventId] = useState<number | null>(null);
+
+    useEffect(() => {
+      const loadEvents = async () => {
+        setEventsLoading(true);
+        try {
+          const fetchedEvents = await mockAPI.fetchEvents();
+          setEventsList(fetchedEvents);
+          setFilteredEvents(fetchedEvents);
+        } catch (error) {
+          console.error('Error loading events:', error);
+        } finally {
+          setEventsLoading(false);
+        }
+      };
+
+      loadEvents();
+    }, [events]);
+
+    useEffect(() => {
+      let filtered = eventsList;
+      
+      if (searchTerm) {
+        filtered = filtered.filter(event => 
+          event.title.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      
+      if (categoryFilter !== 'all') {
+        filtered = filtered.filter(event => event.category === categoryFilter);
+      }
+      
+      setFilteredEvents(filtered);
+    }, [eventsList, searchTerm, categoryFilter]);
+
+    const handleDeleteEvent = async (eventId: number) => {
+      setLoading(true);
       try {
-        const data = await mockAPI.fetchEvents();
-        setEvents(data);
+        await mockAPI.deleteEvent(eventId);
+        toast({
+          title: "Success",
+          description: "Event deleted successfully",
+        });
+        setDeleteEventId(null);
+        
+        // Refresh events list
+        const fetchedEvents = await mockAPI.fetchEvents();
+        setEventsList(fetchedEvents);
       } catch (error) {
-        console.error('Error loading events:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete event",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    loadEvents();
-  }, []);
+    if (eventsLoading) {
+      return (
+        <div className="space-y-6 p-8">
+          <div className="flex flex-col md:flex-row gap-4 justify-between">
+            <Skeleton className="h-8 w-48" />
+            <div className="flex gap-4">
+              <Skeleton className="h-10 w-64" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <Card key={i} className="gradient-card">
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-20 w-full mb-4" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
+    }
 
-  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6 p-8">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Event Management</h1>
+            <p className="text-muted-foreground mt-2">Create, edit, and manage campus events</p>
+          </div>
+          
+          <Button onClick={() => setPage('create-event')} className="glow-effect">
+            <Plus className="mr-2 h-4 w-4" />
+            Create New Event
+          </Button>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search events..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full md:w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="Workshop">Workshop</SelectItem>
+              <SelectItem value="Fest">Fest</SelectItem>
+              <SelectItem value="Seminar">Seminar</SelectItem>
+              <SelectItem value="Tech Talk">Tech Talk</SelectItem>
+              <SelectItem value="Hackathon">Hackathon</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Events Grid */}
+        {filteredEvents.length === 0 ? (
+          <EmptyState 
+            icon={Calendar} 
+            title="No Events Found" 
+            description="No events match your current search and filter criteria."
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredEvents.map((event) => (
+              <Card key={event.event_id} className="gradient-card hover:elevated-card transition-smooth cursor-pointer">
+                <CardHeader onClick={() => setPage(`event-detail/${event.event_id}`)}>
+                  <div className="flex items-center justify-between">
+                    <Badge className={`${getCategoryColor(event.category)} text-white`}>
+                      {event.category}
+                    </Badge>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPage(`event-edit/${event.event_id}`);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Event</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{event.title}"? This action cannot be undone and will also remove all registrations for this event.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteEvent(event.event_id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Event
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                  <CardTitle className="text-lg">{event.title}</CardTitle>
+                </CardHeader>
+                <CardContent onClick={() => setPage(`event-detail/${event.event_id}`)}>
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{event.description}</p>
+                  
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center text-muted-foreground">
+                      <Clock className="mr-2 h-4 w-4" />
+                      {formatDate(event.event_date)}
+                    </div>
+                    <div className="flex items-center text-muted-foreground">
+                      <MapPin className="mr-2 h-4 w-4" />
+                      {event.location}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     );
-  }
-
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Event Management</h1>
-          <p className="text-muted-foreground mt-2">Manage all campus events</p>
-        </div>
-        
-        <Button
-          onClick={() => onPageChange('create-event')}
-          className="gradient-primary glow-effect transition-bounce hover:scale-105"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Event
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.map((event) => (
-          <Card key={event.event_id} className="gradient-card elevated-card transition-smooth hover:scale-105">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">
-                  {event.category}
-                </Badge>
-              </div>
-              <CardTitle className="text-lg">{event.title}</CardTitle>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground line-clamp-3">{event.description}</p>
-              
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-sm">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  <span>{new Date(event.event_date).toLocaleDateString()}</span>
-                  <span className="text-muted-foreground">
-                    {new Date(event.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-                
-                <div className="flex items-center space-x-2 text-sm">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <span className="truncate">{event.location}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Component: Student Event Card (Preview)
-const StudentEventCard: React.FC = () => {
-  const sampleEvent = mockEvents[0]; // Use first event as sample
-
-  return (
-    <Card className="gradient-card transition-smooth hover:scale-105 cursor-pointer">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <Badge className="bg-primary/20 text-primary border-primary/30">
-            {sampleEvent.category}
-          </Badge>
-          <div className="text-xs text-muted-foreground">
-            {new Date(sampleEvent.event_date).toLocaleDateString()}
-          </div>
-        </div>
-        <CardTitle className="text-lg">{sampleEvent.title}</CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        <div className="flex items-center space-x-2 text-sm">
-          <Calendar className="h-4 w-4 text-primary" />
-          <span>{new Date(sampleEvent.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-        </div>
-        
-        <div className="flex items-center space-x-2 text-sm">
-          <MapPin className="h-4 w-4 text-primary" />
-          <span className="truncate">{sampleEvent.location}</span>
-        </div>
-        
-        <Button className="w-full gradient-primary glow-effect transition-bounce hover:scale-105">
-          <Eye className="h-4 w-4 mr-2" />
-          View Details
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Component: Student Registration Modal (Preview)
-const StudentEventRegistrationModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const sampleEvent = mockEvents[0];
-  
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-lg gradient-card elevated-card">
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <Badge className="bg-primary/20 text-primary border-primary/30 mb-2">
-                {sampleEvent.category}
-              </Badge>
-              <CardTitle className="text-xl">{sampleEvent.title}</CardTitle>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          <p className="text-muted-foreground">{sampleEvent.description}</p>
-          
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <Calendar className="h-5 w-5 text-primary" />
-              <div>
-                <div className="font-medium">{new Date(sampleEvent.event_date).toLocaleDateString()}</div>
-                <div className="text-sm text-muted-foreground">
-                  {new Date(sampleEvent.event_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <MapPin className="h-5 w-5 text-primary" />
-              <div className="font-medium">{sampleEvent.location}</div>
-            </div>
-          </div>
-          
-          <div className="flex space-x-3 pt-4">
-            <Button className="flex-1 gradient-primary glow-effect transition-bounce hover:scale-105">
-              Register Now
-            </Button>
-            <Button variant="secondary" onClick={onClose} className="transition-smooth">
-              Close
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-// Main Campus Event Platform Component
-const CampusEventPlatform: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState('dashboard');
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <AdminDashboard onPageChange={setCurrentPage} />;
-      case 'reports':
-        return <ReportingPage />;
-      case 'create-event':
-        return <EventForm onPageChange={setCurrentPage} />;
-      case 'events':
-        return <EventsList onPageChange={setCurrentPage} />;
-      default:
-        return <AdminDashboard onPageChange={setCurrentPage} />;
-    }
   };
 
-  return (
-    <div className="min-h-screen bg-background flex">
-      <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+  const EventDetail: React.FC<{ eventId: number }> = ({ eventId }) => {
+    const [event, setEvent] = useState<Event | null>(null);
+    const [eventRegistrations, setEventRegistrations] = useState<Array<{registration: Registration; student: User}>>([]);
+    const [detailLoading, setDetailLoading] = useState(true);
+
+    useEffect(() => {
+      const loadEventDetails = async () => {
+        setDetailLoading(true);
+        try {
+          const fetchedEvents = await mockAPI.fetchEvents();
+          const foundEvent = fetchedEvents.find(e => e.event_id === eventId);
+          setEvent(foundEvent || null);
+          
+          if (foundEvent) {
+            const registrations = await mockAPI.fetchEventRegistrations(eventId);
+            setEventRegistrations(registrations);
+          }
+        } catch (error) {
+          console.error('Error loading event details:', error);
+        } finally {
+          setDetailLoading(false);
+        }
+      };
+
+      loadEventDetails();
+    }, [eventId, registrations]);
+
+    const handleCheckIn = async (registrationId: number) => {
+      setLoading(true);
+      try {
+        await mockAPI.checkInStudent(registrationId);
+        toast({
+          title: "Success",
+          description: "Student checked in successfully",
+        });
+        
+        // Refresh registrations
+        const updatedRegistrations = await mockAPI.fetchEventRegistrations(eventId);
+        setEventRegistrations(updatedRegistrations);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to check in student",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (detailLoading) {
+      return (
+        <div className="space-y-6 p-8">
+          <Button variant="ghost" onClick={() => setPage('events-list')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Events
+          </Button>
+          
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
+      );
+    }
+
+    if (!event) {
+      return (
+        <div className="p-8">
+          <Button variant="ghost" onClick={() => setPage('events-list')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Events
+          </Button>
+          <EmptyState 
+            icon={AlertCircle} 
+            title="Event Not Found" 
+            description="The requested event could not be found."
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6 p-8">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => setPage('events-list')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Events
+          </Button>
+          
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={() => setPage(`event-edit/${event.event_id}`)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Event
+            </Button>
+          </div>
+        </div>
+
+        <Card className="gradient-card">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <Badge className={`${getCategoryColor(event.category)} text-white`}>
+                {event.category}
+              </Badge>
+            </div>
+            <CardTitle className="text-2xl">{event.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-muted-foreground">{event.description}</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center text-muted-foreground">
+                <Clock className="mr-2 h-5 w-5" />
+                <span>{formatDate(event.event_date)}</span>
+              </div>
+              <div className="flex items-center text-muted-foreground">
+                <MapPin className="mr-2 h-5 w-5" />
+                <span>{event.location}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Registered Students */}
+        <Card className="gradient-card">
+          <CardHeader>
+            <CardTitle>Registered Students ({eventRegistrations.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {eventRegistrations.length === 0 ? (
+              <EmptyState 
+                icon={Users} 
+                title="No Registrations" 
+                description="No students have registered for this event yet."
+              />
+            ) : (
+              <div className="space-y-3">
+                {eventRegistrations.map(({ registration, student }) => (
+                  <div key={registration.registration_id} className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{student.full_name}</p>
+                        <p className="text-sm text-muted-foreground">{student.email}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm text-muted-foreground">
+                        Registered: {formatDate(registration.registration_date)}
+                      </span>
+                      
+                      {registration.checked_in ? (
+                        <Badge variant="default" className="bg-green-600">
+                          <CheckCircle2 className="mr-1 h-3 w-3" />
+                          Checked In
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleCheckIn(registration.registration_id)}
+                          disabled={loading}
+                          className="glow-effect"
+                        >
+                          <UserCheck className="mr-2 h-4 w-4" />
+                          Check In
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const EventForm: React.FC<{ eventId?: number }> = ({ eventId }) => {
+    const isEdit = !!eventId;
+    const [formData, setFormData] = useState({
+      title: '',
+      description: '',
+      event_date: '',
+      location: '',
+      category: 'Workshop' as EventCategory
+    });
+    const [formLoading, setFormLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(isEdit);
+
+    useEffect(() => {
+      if (isEdit) {
+        const loadEvent = async () => {
+          setInitialLoading(true);
+          try {
+            const fetchedEvents = await mockAPI.fetchEvents();
+            const event = fetchedEvents.find(e => e.event_id === eventId);
+            if (event) {
+              setFormData({
+                title: event.title,
+                description: event.description,
+                event_date: event.event_date.slice(0, 16), // Format for datetime-local input
+                location: event.location,
+                category: event.category
+              });
+            }
+          } catch (error) {
+            console.error('Error loading event:', error);
+          } finally {
+            setInitialLoading(false);
+          }
+        };
+        loadEvent();
+      }
+    }, [isEdit, eventId]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setFormLoading(true);
       
-      <main className="flex-1 p-8">
-        {renderPage()}
-      </main>
+      try {
+        const eventData = {
+          ...formData,
+          event_date: new Date(formData.event_date).toISOString(),
+          created_by: currentUserId
+        };
+
+        if (isEdit) {
+          await mockAPI.updateEvent(eventId!, eventData);
+          toast({
+            title: "Success",
+            description: "Event updated successfully",
+          });
+        } else {
+          await mockAPI.createEvent(eventData);
+          toast({
+            title: "Success",
+            description: "Event created successfully",
+          });
+        }
+        
+        setPage('events-list');
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: `Failed to ${isEdit ? 'update' : 'create'} event`,
+          variant: "destructive",
+        });
+      } finally {
+        setFormLoading(false);
+      }
+    };
+
+    if (initialLoading) {
+      return (
+        <div className="space-y-6 p-8">
+          <Button variant="ghost" onClick={() => setPage('events-list')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Events
+          </Button>
+          
+          <div className="max-w-2xl space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6 p-8">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => setPage('events-list')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Events
+          </Button>
+        </div>
+
+        <Card className="gradient-card max-w-2xl">
+          <CardHeader>
+            <CardTitle>{isEdit ? 'Edit Event' : 'Create New Event'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Event Title</label>
+                <Input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter event title"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Description</label>
+                <Textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Enter event description"
+                  rows={4}
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Date & Time</label>
+                  <Input
+                    type="datetime-local"
+                    value={formData.event_date}
+                    onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Category</label>
+                  <Select value={formData.category} onValueChange={(value: EventCategory) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Workshop">Workshop</SelectItem>
+                      <SelectItem value="Fest">Fest</SelectItem>
+                      <SelectItem value="Seminar">Seminar</SelectItem>
+                      <SelectItem value="Tech Talk">Tech Talk</SelectItem>
+                      <SelectItem value="Hackathon">Hackathon</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Location</label>
+                <Input
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Enter event location"
+                  required
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setPage('events-list')}
+                  disabled={formLoading}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={formLoading}
+                  className="glow-effect"
+                >
+                  {formLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {isEdit ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    <>{isEdit ? 'Update Event' : 'Create Event'}</>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const ReportsPage: React.FC = () => {
+    const [topStudents, setTopStudents] = useState<TopStudent[]>([]);
+    const [eventStats, setEventStats] = useState<EventWithStats[]>([]);
+    const [filteredEventStats, setFilteredEventStats] = useState<EventWithStats[]>([]);
+    const [categoryFilter, setCategoryFilter] = useState<string>('all');
+    const [reportsLoading, setReportsLoading] = useState(true);
+
+    useEffect(() => {
+      const loadReports = async () => {
+        setReportsLoading(true);
+        try {
+          const [students, events] = await Promise.all([
+            mockAPI.fetchTopStudents(),
+            mockAPI.fetchEventWithStats()
+          ]);
+          
+          setTopStudents(students);
+          setEventStats(events);
+          setFilteredEventStats(events);
+        } catch (error) {
+          console.error('Error loading reports:', error);
+        } finally {
+          setReportsLoading(false);
+        }
+      };
+
+      loadReports();
+    }, [registrations]);
+
+    useEffect(() => {
+      if (categoryFilter === 'all') {
+        setFilteredEventStats(eventStats);
+      } else {
+        setFilteredEventStats(eventStats.filter(event => event.category === categoryFilter));
+      }
+    }, [eventStats, categoryFilter]);
+
+    if (reportsLoading) {
+      return (
+        <div className="space-y-8 p-8">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <Card key={i} className="gradient-card">
+                <CardHeader>
+                  <Skeleton className="h-12 w-12 rounded-full mx-auto" />
+                  <Skeleton className="h-6 w-24 mx-auto" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-32 mx-auto" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-8 p-8">
+        <div>
+          <h1 className="text-3xl font-bold">Event & Student Reports</h1>
+          <p className="text-muted-foreground mt-2">Analytics and insights for campus events</p>
+        </div>
+
+        {/* Top 3 Students */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-6">Top 3 Most Active Students</h2>
+          {topStudents.length === 0 ? (
+            <EmptyState 
+              icon={Trophy} 
+              title="No Student Activity" 
+              description="No students have checked into events yet."
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {topStudents.map((student) => (
+                <Card key={student.user_id} className="gradient-card elevated-card text-center">
+                  <CardHeader>
+                    <div className="mx-auto mb-4">
+                      {getRankIcon(student.rank)}
+                    </div>
+                    <CardTitle className="text-lg">#{student.rank} {student.full_name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary mb-2">
+                      {student.total_checkins}
+                    </div>
+                    <p className="text-muted-foreground">Events Attended</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Event Analytics */}
+        <div>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <h2 className="text-2xl font-semibold">Event Analytics</h2>
+            
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="Workshop">Workshop</SelectItem>
+                <SelectItem value="Fest">Fest</SelectItem>
+                <SelectItem value="Seminar">Seminar</SelectItem>
+                <SelectItem value="Tech Talk">Tech Talk</SelectItem>
+                <SelectItem value="Hackathon">Hackathon</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {filteredEventStats.length === 0 ? (
+            <EmptyState 
+              icon={BarChart3} 
+              title="No Events Found" 
+              description="No events match the selected category filter."
+            />
+          ) : (
+            <Card className="gradient-card">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-4 font-medium">Event Title</th>
+                        <th className="text-left p-4 font-medium">Category</th>
+                        <th className="text-left p-4 font-medium">Date</th>
+                        <th className="text-center p-4 font-medium">Registrations</th>
+                        <th className="text-center p-4 font-medium">Check-in Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredEventStats.map((event) => (
+                        <tr key={event.event_id} className="border-b border-border hover:bg-muted/20">
+                          <td className="p-4 font-medium">{event.title}</td>
+                          <td className="p-4">
+                            <Badge className={`${getCategoryColor(event.category)} text-white`}>
+                              {event.category}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-muted-foreground">
+                            {formatDate(event.event_date)}
+                          </td>
+                          <td className="p-4 text-center font-semibold">
+                            {event.total_registrations}
+                          </td>
+                          <td className="p-4 text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="w-16 bg-muted rounded-full h-2">
+                                <div 
+                                  className="bg-primary h-2 rounded-full" 
+                                  style={{ width: `${event.checkin_rate}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium">{event.checkin_rate}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ============= STUDENT COMPONENTS =============
+  const EventBrowser: React.FC = () => {
+    const [availableEvents, setAvailableEvents] = useState<EventWithRegistration[]>([]);
+    const [browserLoading, setBrowserLoading] = useState(true);
+
+    useEffect(() => {
+      const loadEvents = async () => {
+        setBrowserLoading(true);
+        try {
+          const studentEvents = await mockAPI.fetchStudentEvents(currentUserId);
+          setAvailableEvents(studentEvents);
+        } catch (error) {
+          console.error('Error loading events:', error);
+        } finally {
+          setBrowserLoading(false);
+        }
+      };
+
+      loadEvents();
+    }, [currentUserId, registrations]);
+
+    const handleEventClick = (event: EventWithRegistration) => {
+      setSelectedEventId(event.event_id);
+      setShowEventModal(true);
+    };
+
+    if (browserLoading) {
+      return (
+        <div className="space-y-6 p-8">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <Card key={i} className="gradient-card">
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-20 w-full mb-4" />
+                  <Skeleton className="h-8 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6 p-8">
+        <div>
+          <h1 className="text-3xl font-bold">Browse Events</h1>
+          <p className="text-muted-foreground mt-2">Discover and register for campus events</p>
+        </div>
+
+        {availableEvents.length === 0 ? (
+          <EmptyState 
+            icon={Calendar} 
+            title="No Events Available" 
+            description="There are currently no events available for registration."
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {availableEvents.map((event) => (
+              <Card key={event.event_id} className="gradient-card hover:elevated-card transition-smooth cursor-pointer">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <Badge className={`${getCategoryColor(event.category)} text-white`}>
+                      {event.category}
+                    </Badge>
+                    {event.is_registered && (
+                      <Badge variant="default" className="bg-green-600">
+                        Registered
+                      </Badge>
+                    )}
+                  </div>
+                  <CardTitle className="text-lg">{event.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{event.description}</p>
+                  
+                  <div className="space-y-2 text-sm mb-4">
+                    <div className="flex items-center text-muted-foreground">
+                      <Clock className="mr-2 h-4 w-4" />
+                      {formatDate(event.event_date)}
+                    </div>
+                    <div className="flex items-center text-muted-foreground">
+                      <MapPin className="mr-2 h-4 w-4" />
+                      {event.location}
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => handleEventClick(event)}
+                    className="w-full glow-effect"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Details
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const MyEvents: React.FC = () => {
+    const [myEvents, setMyEvents] = useState<EventWithRegistration[]>([]);
+    const [myEventsLoading, setMyEventsLoading] = useState(true);
+
+    useEffect(() => {
+      const loadMyEvents = async () => {
+        setMyEventsLoading(true);
+        try {
+          const studentEvents = await mockAPI.fetchStudentEvents(currentUserId);
+          const registeredEvents = studentEvents.filter(event => event.is_registered);
+          setMyEvents(registeredEvents);
+        } catch (error) {
+          console.error('Error loading my events:', error);
+        } finally {
+          setMyEventsLoading(false);
+        }
+      };
+
+      loadMyEvents();
+    }, [currentUserId, registrations]);
+
+    const handleEventClick = (event: EventWithRegistration) => {
+      setSelectedEventId(event.event_id);
+      setShowEventModal(true);
+    };
+
+    if (myEventsLoading) {
+      return (
+        <div className="space-y-6 p-8">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <Card key={i} className="gradient-card">
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-20 w-full mb-4" />
+                  <Skeleton className="h-8 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6 p-8">
+        <div>
+          <h1 className="text-3xl font-bold">My Events</h1>
+          <p className="text-muted-foreground mt-2">Events you have registered for</p>
+        </div>
+
+        {myEvents.length === 0 ? (
+          <EmptyState 
+            icon={Heart} 
+            title="No Registered Events" 
+            description="You haven't registered for any events yet. Browse events to get started!"
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {myEvents.map((event) => {
+              const registration = registrations.find(r => r.student_id === currentUserId && r.event_id === event.event_id);
+              
+              return (
+                <Card key={event.event_id} className="gradient-card hover:elevated-card transition-smooth cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <Badge className={`${getCategoryColor(event.category)} text-white`}>
+                        {event.category}
+                      </Badge>
+                      {registration?.checked_in && (
+                        <Badge variant="default" className="bg-green-600">
+                          <CheckCircle2 className="mr-1 h-3 w-3" />
+                          Attended
+                        </Badge>
+                      )}
+                    </div>
+                    <CardTitle className="text-lg">{event.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{event.description}</p>
+                    
+                    <div className="space-y-2 text-sm mb-4">
+                      <div className="flex items-center text-muted-foreground">
+                        <Clock className="mr-2 h-4 w-4" />
+                        {formatDate(event.event_date)}
+                      </div>
+                      <div className="flex items-center text-muted-foreground">
+                        <MapPin className="mr-2 h-4 w-4" />
+                        {event.location}
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => handleEventClick(event)}
+                      className="w-full glow-effect"
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Details
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const EventDetailModal: React.FC = () => {
+    const [modalEvent, setModalEvent] = useState<EventWithRegistration | null>(null);
+    const [modalLoading, setModalLoading] = useState(true);
+
+    useEffect(() => {
+      if (selectedEventId && showEventModal) {
+        const loadModalEvent = async () => {
+          setModalLoading(true);
+          try {
+            const studentEvents = await mockAPI.fetchStudentEvents(currentUserId);
+            const event = studentEvents.find(e => e.event_id === selectedEventId);
+            setModalEvent(event || null);
+          } catch (error) {
+            console.error('Error loading event for modal:', error);
+          } finally {
+            setModalLoading(false);
+          }
+        };
+
+        loadModalEvent();
+      }
+    }, [selectedEventId, showEventModal, currentUserId, registrations]);
+
+    const handleRegistration = async () => {
+      if (!modalEvent) return;
+
+      setLoading(true);
+      try {
+        if (modalEvent.is_registered) {
+          await mockAPI.unregisterFromEvent(currentUserId, modalEvent.event_id);
+          toast({
+            title: "Unregistered",
+            description: "You have been unregistered from this event",
+          });
+        } else {
+          await mockAPI.registerForEvent(currentUserId, modalEvent.event_id);
+          toast({
+            title: "Registered!",
+            description: "You have successfully registered for this event",
+          });
+        }
+        
+        // Refresh the modal event data
+        const studentEvents = await mockAPI.fetchStudentEvents(currentUserId);
+        const updatedEvent = studentEvents.find(e => e.event_id === modalEvent.event_id);
+        setModalEvent(updatedEvent || null);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update registration",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const handleCloseModal = () => {
+      setShowEventModal(false);
+      setSelectedEventId(null);
+      setModalEvent(null);
+    };
+
+    if (!showEventModal || !selectedEventId) return null;
+
+    return (
+      <Dialog open={showEventModal} onOpenChange={handleCloseModal}>
+        <DialogContent className="max-w-2xl">
+          {modalLoading ? (
+            <div className="space-y-4 p-6">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-32 w-full" />
+              <div className="flex justify-end space-x-4">
+                <Skeleton className="h-10 w-20" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </div>
+          ) : modalEvent ? (
+            <>
+              <DialogHeader>
+                <div className="flex items-center justify-between mb-2">
+                  <Badge className={`${getCategoryColor(modalEvent.category)} text-white`}>
+                    {modalEvent.category}
+                  </Badge>
+                  {modalEvent.is_registered && (
+                    <Badge variant="default" className="bg-green-600">
+                      Registered
+                    </Badge>
+                  )}
+                </div>
+                <DialogTitle className="text-xl">{modalEvent.title}</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                <DialogDescription className="text-base">
+                  {modalEvent.description}
+                </DialogDescription>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center text-muted-foreground">
+                    <Clock className="mr-2 h-5 w-5" />
+                    <span>{formatDate(modalEvent.event_date)}</span>
+                  </div>
+                  <div className="flex items-center text-muted-foreground">
+                    <MapPin className="mr-2 h-5 w-5" />
+                    <span>{modalEvent.location}</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-4">
+                  <Button variant="outline" onClick={handleCloseModal}>
+                    Close
+                  </Button>
+                  <Button 
+                    onClick={handleRegistration}
+                    disabled={loading}
+                    className={modalEvent.is_registered ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "glow-effect"}
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Processing...
+                      </>
+                    ) : modalEvent.is_registered ? (
+                      <>
+                        <X className="mr-2 h-4 w-4" />
+                        Unregister
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Register Now
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="p-6">
+              <EmptyState 
+                icon={AlertCircle} 
+                title="Event Not Found" 
+                description="The requested event could not be loaded."
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  // ============= MAIN RENDER LOGIC =============
+  const renderPage = () => {
+    if (appMode === 'admin') {
+      if (page === 'dashboard') return <AdminDashboard />;
+      if (page === 'events-list') return <EventsList />;
+      if (page === 'create-event') return <EventForm />;
+      if (page.startsWith('event-edit/')) {
+        const eventId = parseInt(page.split('/')[1]);
+        return <EventForm eventId={eventId} />;
+      }
+      if (page.startsWith('event-detail/')) {
+        const eventId = parseInt(page.split('/')[1]);
+        return <EventDetail eventId={eventId} />;
+      }
+      if (page === 'reports') return <ReportsPage />;
+    } else {
+      if (page === 'event-browser') return <EventBrowser />;
+      if (page === 'my-events') return <MyEvents />;
+    }
+    
+    // Default fallback
+    return appMode === 'admin' ? <AdminDashboard /> : <EventBrowser />;
+  };
+
+  // Set initial page based on app mode
+  useEffect(() => {
+    if (appMode === 'admin' && !['dashboard', 'events-list', 'reports', 'create-event'].some(p => page.startsWith(p))) {
+      setPage('dashboard');
+    } else if (appMode === 'student' && !['event-browser', 'my-events'].includes(page)) {
+      setPage('event-browser');
+    }
+  }, [appMode, page]);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      {appMode === 'admin' ? (
+        <div className="flex">
+          <AdminSidebar />
+          <main className="flex-1">
+            {renderPage()}
+          </main>
+        </div>
+      ) : (
+        <div className="flex flex-col min-h-screen">
+          <StudentHeader />
+          <main className="flex-1">
+            {renderPage()}
+          </main>
+        </div>
+      )}
+      
+      {/* Event Detail Modal for Student App */}
+      <EventDetailModal />
     </div>
   );
 };

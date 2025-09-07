@@ -2,10 +2,10 @@
 
 It is a web application for managing campus events and activities, and its features are as follows
 
-Event management
-User authentication
-Real-time updates
-Responsive design
+1.Event management
+2.User authentication
+3.Real-time updates
+4.Responsive design
 
 To setup The application provides functions that act as endpoints for generating reports:the project in your local first Clone the repository:
 

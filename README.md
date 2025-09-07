@@ -1,73 +1,29 @@
-# Welcome to your Lovable project
 
-## Project info
 
-**URL**: https://lovable.dev/projects/a8ff2d02-8546-449c-8bae-69cd6a1e3187
+It is a web application for managing campus events and activities, and its features are as follows
 
-## How can I edit this code?
+Event management
+User authentication
+Real-time updates
+Responsive design
 
-There are several ways of editing your application.
+To get the project in your local first Clone the repository:
 
-**Use Lovable**
+git clone https://github.com/Vishalbharadwaj27/single-campus-hub.git
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a8ff2d02-8546-449c-8bae-69cd6a1e3187) and start prompting.
+Navigate to the directory and install dependencies:
 
-Changes made via Lovable will be committed automatically to this repo.
+cd single-campus-hub && npm install
 
-**Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+To Start the development server:
 npm run dev
-```
 
-**Edit a file directly in GitHub**
+About the project 
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+In this project the admins can create events, modify them and can get the list of students who are participating in each of the events.
+whereas the students can read indetail about the events that are lined up and can register or also cancel their registration from a particular event.Also the attendance can be taken for a student for the particular event that the student is participating through the portal itself
+This is made for the convenience of the college and its students for easier engagement and involvement of students in all the events whithout the struggle for a manual registeration.
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/a8ff2d02-8546-449c-8bae-69cd6a1e3187) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+--How i built the project
+I have used an ai platform called as LOVABLE ai to do this application, and gave it super specific prompts and made the functional prototype of what was asked to be delivered

@@ -1,106 +1,100 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Campus Event Management Platform Design System - Dark Theme with Cyan Accents */
-
 @layer base {
   :root {
-    /* Dark theme primary colors */
-    --background: 222 47% 5%;
+    --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
-    --card: 224 47% 8%;
+    --card: 222 47% 11%;
     --card-foreground: 210 40% 98%;
-
-    --popover: 224 47% 8%;
+ 
+    --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-
-    /* Cyan/Teal accent system */
+ 
     --primary: 188 100% 45%;
-    --primary-foreground: 222 47% 5%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 188 85% 60%;
+ 
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+ 
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 188 100% 45%;
+ 
+    --radius: 0.5rem;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 0 0% 98%;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Keep the primary accent color consistent */
+    --primary: 188 100% 45%;
+    --primary-foreground: 210 40% 98%;
     --primary-glow: 188 85% 60%;
 
-    --secondary: 215 25% 15%;
-    --secondary-foreground: 210 40% 85%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 215 25% 12%;
-    --muted-foreground: 215 15% 65%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 15% 45%;
 
-    --accent: 188 100% 45%;
-    --accent-foreground: 222 47% 5%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
     --destructive: 0 85% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 215 25% 15%;
-    --input: 215 25% 12%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
     --ring: 188 100% 45%;
 
-    --radius: 0.75rem;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 0 0% 98%;
 
-    /* Custom gradients and effects */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(215 30% 10%));
-    --shadow-glow: 0 10px 40px -10px hsl(var(--primary) / 0.3);
-    --shadow-elevated: 0 20px 60px -10px hsl(222 47% 2% / 0.5);
-    
-    /* Animation variables */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    /* Keep the primary accent color consistent */
+    --primary: 188 100% 45%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 188 85% 60%;
 
-    --sidebar-background: 0 0% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 15% 45%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 188 100% 45%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground font-inter;
-  }
-}
-
-@layer components {
-  .glow-effect {
-    box-shadow: var(--shadow-glow);
-  }
-  
-  .elevated-card {
-    box-shadow: var(--shadow-elevated);
-  }
-  
-  .gradient-primary {
-    background: var(--gradient-primary);
-  }
-  
-  .gradient-card {
-    background: var(--gradient-card);
-  }
-  
-  .transition-smooth {
-    transition: var(--transition-smooth);
-  }
-  
-  .transition-bounce {
-    transition: var(--transition-bounce);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 0 0% 98%;
   }
 }
